@@ -6117,7 +6117,6 @@ task.spawn(function()
 	local TARGET_STREAK = 50
 
 	local currentStreak = 0
-	local lastAnnouncedStreak = 0
 	local hopTriggered = false
 	local spawnKills = nil
 
@@ -6141,7 +6140,7 @@ task.spawn(function()
 		if hopTriggered then return end
 		hopTriggered = true
 		sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server...", TARGET_STREAK))
-		print("[BeeZ Hub] Auto Hop Triggered at " .. tostring(currentStreak) .. " streak!")
+		print("[BeeZ Hub] Target streak reached: " .. tostring(currentStreak) .. "! Hopping server...")
 		task.wait(1)
 
 		if typeof(doHopServer) == "function" then
@@ -6154,11 +6153,7 @@ task.spawn(function()
 	local function updateStreak(val)
 		if val > currentStreak then
 			currentStreak = val
-			if currentStreak > lastAnnouncedStreak then
-				lastAnnouncedStreak = currentStreak
-				sendChatAnnouncement(string.format("[BeeZ Hub] Streak: %d Kills Streak!", currentStreak))
-				print(string.format("[BeeZ Hub] Streak Watcher: %d", currentStreak))
-			end
+			print(string.format("[BeeZ Hub] Current Streak: %d", currentStreak))
 
 			if currentStreak >= TARGET_STREAK and not hopTriggered then
 				triggerServerHop()
@@ -6166,7 +6161,7 @@ task.spawn(function()
 		end
 	end
 
-	-- CÁCH 1: Tính Streak theo Total Kills (chính xác tuyệt đối trong The Strongest Battlegrounds)
+	-- CÁCH 1: Tính Streak theo Total Kills (TSB leaderstats)
 	task.spawn(function()
 		local leaderstats = LocalPlayer:WaitForChild("leaderstats", 15) or LocalPlayer
 		local totalKills = leaderstats:WaitForChild("Total Kills", 15)
@@ -6177,14 +6172,12 @@ task.spawn(function()
 				spawnKills = totalKills.Value
 			end
 			currentStreak = 0
-			lastAnnouncedStreak = 0
 			hopTriggered = false
 
 			local hum = char:WaitForChild("Humanoid", 10)
 			if hum then
 				hum.Died:Connect(function()
 					currentStreak = 0
-					lastAnnouncedStreak = 0
 					if totalKills then
 						spawnKills = totalKills.Value
 					end
@@ -6211,7 +6204,7 @@ task.spawn(function()
 		end
 	end)
 
-	-- CÁCH 2: Quét trực tiếp Text số streak vương miện trên đầu nhân vật
+	-- CÁCH 2: Quét UI Streak số màu vàng / vương miện trên đầu nhân vật
 	task.spawn(function()
 		while true do
 			task.wait(0.5)
