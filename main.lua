@@ -1,5 +1,5 @@
 -- Configuration
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1566307779726151860/wADpDkR9YOJ2X6borbtQ2cMARjzoov1ilE3Xft6YqnSRP_n63AARdUFImgF9YYBdB7lX"
+local WEBHOOK_URL = "webhook"
 local SCRIPT_NAME = "BeeZ Hub - Farm TSB Public"
 
 -- Services & Player Info
