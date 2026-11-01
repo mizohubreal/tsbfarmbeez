@@ -1,6 +1,6 @@
 -- Configuration
 local WEBHOOK_URL = "webhook"
-local SCRIPT_NAME = "Farm TSB Public"
+local SCRIPT_NAME = "BeeZ Hub - Farm TSB Public"
 
 -- Services & Player Info
 local HttpService = game:GetService("HttpService")
@@ -114,8 +114,8 @@ local function serverHopImpl()
                             for _, server in ipairs(body.data) do
                                 if type(server) == "table"
                                    and server.id ~= currentJobId
-and server.playing < server.maxPlayers
-                                    and server.playing >= MIN_PLAYERS_TO_HOP then
+                                   and server.playing < server.maxPlayers
+                                   and server.playing >= MIN_PLAYERS_TO_HOP then
                                     table.insert(availableServers, server.id)
                                 end
                             end
@@ -159,7 +159,7 @@ do
 	local str = "hduSjOT3xk44"
 
 	local function fn()
-		v2("[Panda] This script could not verify its runtime environment.", 0)
+		v2("[BeeZ Hub] This script could not verify its runtime environment.", 0)
 	end
 
 	local tbl = {}
@@ -424,6 +424,7 @@ do
 		fn()
 	end
 end
+
 if getgenv().ScriptExecuted then
 	return
 end
@@ -529,12 +530,12 @@ HttpService = game:GetService("HttpService")
 local v, fn
 
 do
-	local str = "ProjectDaddy/PublicFarm/" .. game:GetService("Players").LocalPlayer.Name
+	local str = "BeeZHub/PublicFarm/" .. game:GetService("Players").LocalPlayer.Name
 	local str2 = str .. "/settings.json"
 
 	local function fn2()
-		if not isfolder("ProjectDaddy") then
-			makefolder("ProjectDaddy")
+		if not isfolder("BeeZHub") then
+			makefolder("BeeZHub")
 		end
 
 		if not isfolder(str) then
@@ -551,7 +552,7 @@ do
 		if ok then
 			writefile(str2, result)
 		else
-			warn("[ProjectDaddy] Failed to encode settings:", result)
+			warn("[BeeZHub] Failed to encode settings:", result)
 		end
 	end
 
@@ -562,12 +563,12 @@ do
 		end
 		local ok, result = pcall(readfile, str2)
 		if not ok then
-			warn("[ProjectDaddy] Failed to read settings file:", result)
+			warn("[BeeZHub] Failed to read settings file:", result)
 			return
 		end
 		local ok2, result2 = pcall(HttpService.JSONDecode, HttpService, result)
 		if not ok2 or type(result2) ~= "table" then
-			warn("[ProjectDaddy] Failed to decode settings file, using defaults")
+			warn("[BeeZHub] Failed to decode settings file, using defaults")
 			return
 		end
 
@@ -619,8 +620,8 @@ createUIStroke = function(parent, color, thickness, transparency)
 end
 
 --[[ ####################################################################
-	PROJECT DADDY V2  -  DYNAMIC ISLAND UI
-	- Dynamic island ghim c dinh goc tren man hinh, bam vao se day config ra
+	BEEZ HUB V2  -  DYNAMIC ISLAND UI
+	- Dynamic island ghim co dinh goc tren man hinh, bam vao se day config ra
 	- Config: Season / Kills / Emotes / Region / Hop / Render / Farm
 	- Khong drag (Active = false, Draggable = false)
 	#################################################################### ]]--
@@ -708,7 +709,7 @@ local function clockString()
 end
 
 screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ProjectDaddyV2UI"
+screenGui.Name = "BeeZHubV2UI"
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 999
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
@@ -943,7 +944,7 @@ do
 	headerTitle.Size = UDim2.new(1, -40, 0, 22)
 	headerTitle.Position = UDim2.new(0, 20, 0, 8)
 	headerTitle.BackgroundTransparency = 1
-	headerTitle.Text = "BeeZ Hub"
+	headerTitle.Text = "BEEZ HUB"
 	headerTitle.Font = Enum.Font.GothamBold
 	headerTitle.TextSize = 19
 	headerTitle.TextColor3 = COL.Text
@@ -956,7 +957,7 @@ do
 	headerSub.Size = UDim2.new(1, -40, 0, 13)
 	headerSub.Position = UDim2.new(0, 20, 0, 28)
 	headerSub.BackgroundTransparency = 1
-	headerSub.Text = "PUBLIC FARM  \226\128\162  SEASON CONFIG"
+	headerSub.Text = "PUBLIC FARM  \226\128\162  AUTO HOP STREAK 50"
 	headerSub.Font = Enum.Font.GothamMedium
 	headerSub.TextSize = 9
 	headerSub.TextColor3 = COL.Dim
@@ -1654,7 +1655,7 @@ do
 		end)
 
 		if not ok then
-			warn("Webhook request failed: " .. tostring(result))
+			warn("[BeeZ Hub] Webhook request failed: " .. tostring(result))
 		end
 
 		return ok, result
@@ -3252,7 +3253,7 @@ do
 		character:GetAttributeChangedSignal("Ulted"):Connect(function()
 			if localPlayer.Character:GetAttribute("Ulted") then
 				n8 += 1
-				print("[ProjectDaddy] Ulted detected, time ulted: " .. tostring(n8))
+				print("[BeeZ Hub] Ulted detected, time ulted: " .. tostring(n8))
 			end
 		end)
 	end)
@@ -3263,7 +3264,7 @@ do
 		localPlayer.Character:GetAttributeChangedSignal("Ulted"):Connect(function()
 			if localPlayer.Character:GetAttribute("Ulted") then
 				n8 += 1
-				print("[ProjectDaddy] Ulted detected, time ulted: " .. tostring(n8))
+				print("[BeeZ Hub] Ulted detected, time ulted: " .. tostring(n8))
 			end
 		end)
 	end
@@ -3327,10 +3328,10 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 	doHopServer = function()
 		-- hard floor: the game punishes hopping out of a low-pop server,
 		-- so every internal caller must respect it
-		-- (bypass khi đang bảo toàn streak - user-requested)
-		if not enoughPlayersToHop() and not getgenv().StreakSaveActive then
+		if not enoughPlayersToHop() then
 			return
 		end
+
 		local flag12 = not flag11 and not flag10
 
 		if flag12 then
@@ -3346,15 +3347,9 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 		end
 		flag9 = true
 
-		-- [PATCH 1] chờ flag6/flag8 clear, tối đa 15s để tránh treo nếu bug kẹt
-		local waitStart = tick()
 		while true do
 			task.wait()
 			if not (not flag6 and not flag8) then
-				if tick() - waitStart > 15 then
-					warn("[BeeZ Hub] doHopServer: timeout chờ flag6/flag8, force continue")
-					break
-				end
 				continue
 			end
 			break
@@ -3374,22 +3369,15 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 		end
 
 		if flag11 then
-			localPlayer:Kick("[ProjectDaddy] Kicked by force-hop system.")
+			localPlayer:Kick("[BeeZ Hub] Kicked by force-hop system.")
 		end
 
-		-- [PATCH 2] giới hạn vòng retry teleport (không spam remote vô hạn)
 		task.spawn(function()
-			local attempts = 0
-			local MAX_ATTEMPTS = 8
-			while attempts < MAX_ATTEMPTS do
-				attempts += 1
-				print(("[ProjectDaddy] Hopping ... (attempt %d/%d)"):format(attempts, MAX_ATTEMPTS))
+			while true do
+				print("[BeeZ Hub] Hopping ...")
 
 				if not flag11 then
-					local ok, res = pcall(function()
-						return game:GetService("ReplicatedStorage"):WaitForChild("Ranked"):WaitForChild("GetServerBrowserData"):InvokeServer(unpack(tbl4))
-					end)
-					if ok then response = res end
+					response = game:GetService("ReplicatedStorage"):WaitForChild("Ranked"):WaitForChild("GetServerBrowserData"):InvokeServer(unpack(tbl4))
 				end
 
 				local v3 = fn9(response)
@@ -3410,24 +3398,15 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 							})
 						end)
 					end
-				else
-					print("[ProjectDaddy] Không tìm được server phù hợp, thử lại...")
 				end
 
 				task.wait(3)
-			end
-
-			if attempts >= MAX_ATTEMPTS then
-				warn("[BeeZ Hub] doHopServer: hết lượt thử, reset cờ để lần sau hop được")
-				flag9 = false
-				flag10 = false
-				getgenv().StreakSaveActive = nil
 			end
 		end)
 	end
 
 	textButton2.MouseButton1Click:Connect(function()
-		print("[ProjectDaddy] Hop server manually...")
+		print("[BeeZ Hub] Hop server manually...")
 		flag10 = true
 		doHopServer()
 	end)
@@ -3663,7 +3642,7 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 				getgenv().PBF_WS = nil
 			end
 
-			print("[ProjectDaddy] Received hop server command for: " .. name)
+			print("[BeeZ Hub] Received hop server command for: " .. name)
 			flag10 = true
 			doHopServer()
 		end
@@ -3680,7 +3659,7 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 				getgenv().PBF_WS = nil
 			end
 
-			game.Players.LocalPlayer:Kick("[ProjectDaddy] You got kicked because of duplicate session!")
+			game.Players.LocalPlayer:Kick("[BeeZ Hub] You got kicked because of duplicate session!")
 			task.wait(2)
 			game:Shutdown()
 		end
@@ -3697,7 +3676,7 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 				getgenv().PBF_WS = nil
 			end
 
-			game.Players.LocalPlayer:Kick("[ProjectDaddy] You got kicked by an admin!")
+			game.Players.LocalPlayer:Kick("[BeeZ Hub] You got kicked by an admin!")
 			task.wait(2)
 			game:Shutdown()
 		end
@@ -3712,12 +3691,12 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 			return false, tostring(result)
 		end
 		flag = true
-		print("[ProjectDaddy] Server connected")
+		print("[BeeZ Hub] Server connected")
 		getgenv().PBF_WS.OnMessage:Connect(fn11)
 
 		getgenv().PBF_WS.OnClose:Connect(function()
 			flag = false
-			print("[ProjectDaddy] Server closed")
+			print("[BeeZ Hub] Server closed")
 		end)
 
 		return true
@@ -3729,7 +3708,7 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 
 		while not flag12 do
 			n11 += 1
-			print("[ProjectDaddy] Connecting... (attempt " .. n11 .. ")")
+			print("[BeeZ Hub] Connecting... (attempt " .. n11 .. ")")
 			local flag13, flag14
 
 			if fn12() then
@@ -3738,28 +3717,28 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 				end
 
 				if not flag12 then
-					print("[ProjectDaddy] Disconnected, reconnecting in " .. n10 .. "s...")
+					print("[BeeZ Hub] Disconnected, reconnecting in " .. n10 .. "s...")
 					task.wait(2)
 					n12 = 2
 					flag13 = n11 >= n9
 					flag14 = flag13 and not flag
 
 					if flag14 then
-						warn("[ProjectDaddy] Max retries reached, giving up")
+						warn("[BeeZ Hub] Max retries reached, giving up")
 						break
 					else
 						continue
 					end
 				end
 			else
-				warn("[ProjectDaddy] Connect failed (attempt " .. n11 .. "), retrying in " .. n12 .. "s...")
+				warn("[BeeZ Hub] Connect failed (attempt " .. n11 .. "), retrying in " .. n12 .. "s...")
 				task.wait(n12)
 				n12 = math.min(n12 * 2, 30)
 				flag13 = n11 >= n9
 				flag14 = flag13 and not flag
 
 				if flag14 then
-					warn("[ProjectDaddy] Max retries reached, giving up")
+					warn("[BeeZ Hub] Max retries reached, giving up")
 					break
 				else
 					continue
@@ -3856,209 +3835,12 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 			fn14(v4)
 		end)
 	end)
+end
+deathCounterConns = {}
+deathCounterDebounce = {}
+hookedChars = {}
 
-		-- === STREAK AUTO-HOP (bảo toàn streak >= 50) + CHAT NOTIFY ===
-	do
-		local STREAK_THRESHOLD = 50
-		local streakArmed = true
-		local streakConn = nil
-		local attrConn = nil
-		local notifyReady = false
-
-		local STREAK_NAMES = {"Streak","Killstreak","KillStreak","Kill Streak","KillStreakCount"}
-
-		-- =========================================================
-		-- CHAT NOTIFY: hiện thông báo trên chat box Roblox
-		-- =========================================================
-		local function notifyChat(text, color)
-			color = color or Color3.fromRGB(255, 200, 60)
-			local fullText = "[BeeZ Hub] " .. text
-
-			-- Cách 1: Legacy chat (SetCore ChatMakeSystemMessage)
-			pcall(function()
-				game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
-					Text = fullText,
-					Color = color,
-					Font = Enum.Font.GothamBold,
-					TextSize = 18,
-				})
-			end)
-
-			-- Cách 2: New TextChatService (2024+)
-			pcall(function()
-				local TCS = game:GetService("TextChatService")
-				if TCS.ChatVersion == Enum.ChatVersion.TextChatService then
-					local channels = TCS:FindFirstChild("TextChannels")
-					local general = channels and channels:FindFirstChild("RBXGeneral")
-					if general then
-						local hex = string.format("#%02X%02X%02X",
-							math.floor(color.R * 255),
-							math.floor(color.G * 255),
-							math.floor(color.B * 255))
-						general:DisplaySystemMessage(
-							string.format('<font color="%s" weight="bold">%s</font>', hex, fullText)
-						)
-					end
-				end
-			end)
-
-			-- Cách 3: fallback console (luôn in)
-			print(fullText)
-		end
-
-		-- Đợi chat service sẵn sàng rồi mới notify
-		local function waitChatReady(cb)
-			task.spawn(function()
-				for _ = 1, 20 do
-					local ok1 = pcall(function()
-						game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
-							Text = " ", Color = Color3.new(1,1,1), TextSize = 1
-						})
-					end)
-					local ok2 = pcall(function()
-						local TCS = game:GetService("TextChatService")
-						return TCS.ChatVersion == Enum.ChatVersion.TextChatService
-					end)
-					if ok1 or ok2 then
-						notifyReady = true
-						if cb then cb() end
-						return
-					end
-					task.wait(0.5)
-				end
-				notifyReady = true
-				if cb then cb() end
-			end)
-		end
-
-		-- =========================================================
-		-- ĐỌC STREAK
-		-- =========================================================
-		local function getStreakValue()
-			local ls = localPlayer:FindFirstChild("leaderstats")
-			if ls then
-				for _, name in ipairs(STREAK_NAMES) do
-					local s = ls:FindFirstChild(name)
-					if s and type(s.Value) == "number" then return s.Value end
-				end
-			end
-			for _, name in ipairs(STREAK_NAMES) do
-				local v = localPlayer:GetAttribute(name)
-				if type(v) == "number" then return v end
-			end
-			return nil
-		end
-
-		-- =========================================================
-		-- ON STREAK CHANGE
-		-- =========================================================
-		local function onStreakChange()
-			local val = getStreakValue()
-			if not val then return end
-
-			if val < STREAK_THRESHOLD then
-				streakArmed = true
-				return
-			end
-
-			if not streakArmed then return end
-			streakArmed = false
-
-			-- 🔔 THÔNG BÁO CHAT 1: phát hiện đạt ngưỡng
-			notifyChat(
-				("🔥 STREAK %d/%d — ĐANG CHUẨN BỊ HOP SERVER để bảo toàn!"):format(val, STREAK_THRESHOLD),
-				Color3.fromRGB(255, 100, 100)
-			)
-
-			getgenv().StreakSaveActive = true
-			flag10 = true
-
-			task.spawn(function()
-				-- 🔔 THÔNG BÁO CHAT 2: bắt đầu hop
-				task.wait(0.3)
-				notifyChat(
-					("📡 Đang tìm server mới... (streak hiện tại: %d)"):format(val),
-					Color3.fromRGB(120, 200, 255)
-				)
-
-				local ok, err = pcall(doHopServer)
-				if not ok then
-					notifyChat(
-						("⚠️ Hop thất bại: %s"):format(tostring(err)),
-						Color3.fromRGB(255, 150, 60)
-					)
-				end
-
-				task.delay(60, function()
-					if not getgenv().StreakSaveActive then return end
-					flag10 = false
-					getgenv().StreakSaveActive = nil
-					notifyChat(
-						("⏱️ Hop chưa hoàn tất sau 60s — đã reset. Sẽ thử lại khi streak chạm %d."):format(STREAK_THRESHOLD),
-						Color3.fromRGB(255, 150, 60)
-					)
-				end)
-			end)
-
-			task.delay(120, function() getgenv().StreakSaveActive = nil end)
-		end
-
-		-- =========================================================
-		-- BIND LEADERSTATS
-		-- =========================================================
-		local function bindLeaderstats(ls)
-			if not ls then return end
-			for _, name in ipairs(STREAK_NAMES) do
-				local s = ls:FindFirstChild(name)
-				if s then
-					if streakConn then pcall(function() streakConn:Disconnect() end) end
-					streakConn = s:GetPropertyChangedSignal("Value"):Connect(onStreakChange)
-					onStreakChange()
-					return
-				end
-			end
-			ls.ChildAdded:Connect(function(child)
-				if child.Name:lower():find("streak") then
-					task.wait(0.05)
-					bindLeaderstats(ls)
-				end
-			end)
-		end
-
-		-- =========================================================
-		-- BOOT
-		-- =========================================================
-		local initLs = localPlayer:FindFirstChild("leaderstats")
-		if initLs then
-			bindLeaderstats(initLs)
-		else
-			local conn
-			conn = localPlayer.ChildAdded:Connect(function(c)
-				if c.Name == "leaderstats" then
-					conn:Disconnect()
-					bindLeaderstats(c)
-				end
-			end)
-		end
-
-		attrConn = localPlayer.AttributeChanged:Connect(function(attr)
-			if attr:lower():find("streak") then
-				onStreakChange()
-			end
-		end)
-
-		task.delay(2, onStreakChange)
-
-		-- 🔔 THÔNG BÁO CHAT 3: script load xong
-		waitChatReady(function()
-			task.delay(1.5, function()
-				notifyChat(
-					("✅ Streak watcher sẵn sàng! Ngưỡng: %d. Sẽ tự hop khi đạt + thông báo tại đây."):format(STREAK_THRESHOLD),
-					Color3.fromRGB(100, 220, 120)
-				)
-			end)
-		end)
-	end
+do
 	local flag9 = false
 
 	local function fn8()
@@ -6213,7 +5995,7 @@ loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
 			end
 
 			if not flag4 then
-				print("[ProjectDaddy] Targeting: " .. v2.Name)
+				print("[BeeZ Hub] Targeting: " .. v2.Name)
 				flag4 = true
 				humanoid2.AutoRotate = false
 			end
@@ -6323,5 +6105,89 @@ task.spawn(function()
 		end
 
 		task.wait(0.25)
+	end
+end)
+
+--====================================================== BEEZ HUB STREAK WATCHER ==
+task.spawn(function()
+	local TextChatService = game:GetService("TextChatService")
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local TARGET_STREAK = 50
+	local lastStreak = 0
+	local hopTriggered = false
+
+	local function sendChatAnnouncement(message)
+		pcall(function()
+			if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+				local general = TextChatService:FindFirstChild("TextChannels") and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+				if general then
+					general:SendAsync(message)
+				end
+			else
+				local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+				if chatEvents and chatEvents:FindFirstChild("SayMessageRequest") then
+					chatEvents.SayMessageRequest:FireServer(message, "All")
+				end
+			end
+		end)
+	end
+
+	local function watchStreak(leaderstatsFolder)
+		local streakObj = leaderstatsFolder:FindFirstChild("Streak")
+			or leaderstatsFolder:FindFirstChild("Killstreak")
+			or leaderstatsFolder:FindFirstChild("Kill Streak")
+			or leaderstatsFolder:FindFirstChild("Kills Streak")
+
+		if not streakObj then
+			for _, child in ipairs(leaderstatsFolder:GetChildren()) do
+				if (child:IsA("IntValue") or child:IsA("NumberValue")) and child.Name:lower():find("streak") then
+					streakObj = child
+					break
+				end
+			end
+		end
+
+		if not streakObj then
+			return
+		end
+
+		lastStreak = streakObj.Value
+
+		streakObj:GetPropertyChangedSignal("Value"):Connect(function()
+			local current = streakObj.Value
+
+			if current > lastStreak then
+				lastStreak = current
+				sendChatAnnouncement(string.format("[BeeZ Hub] Streak: %d Kills Streak!", current))
+				print(string.format("[BeeZ Hub] Streak Watcher: %d", current))
+
+				if current >= TARGET_STREAK and not hopTriggered then
+					hopTriggered = true
+					sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server...", TARGET_STREAK))
+					print("[BeeZ Hub] Target streak reached! Hopping server...")
+					task.wait(1)
+
+					if typeof(doHopServer) == "function" then
+						doHopServer()
+					elseif typeof(serverHop) == "function" then
+						serverHop()
+					end
+				end
+			elseif current < lastStreak then
+				lastStreak = current
+				hopTriggered = false
+			end
+		end)
+	end
+
+	local leaderstats = localPlayer:FindFirstChild("leaderstats") or localPlayer:WaitForChild("leaderstats", 15)
+	if leaderstats then
+		watchStreak(leaderstats)
+	else
+		localPlayer.ChildAdded:Connect(function(child)
+			if child.Name == "leaderstats" then
+				watchStreak(child)
+			end
+		end)
 	end
 end)
