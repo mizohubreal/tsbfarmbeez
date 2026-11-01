@@ -6112,6 +6112,7 @@ end)
 task.spawn(function()
 	local Players = game:GetService("Players")
 	local TeleportService = game:GetService("TeleportService")
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local HttpService = game:GetService("HttpService")
 	local LocalPlayer = Players.LocalPlayer
 	local TARGET_STREAK = 50
@@ -6123,7 +6124,7 @@ task.spawn(function()
 	local function triggerServerHop()
 		if hopTriggered then return end
 		hopTriggered = true
-		print("[BeeZ Hub] Reached 50 streak! Hopping immediately...")
+		print("[BeeZ Hub] Reached 50 streak! Hopping safely to 10-13 player server...")
 
 		-- Lưu dữ liệu để sang server mới tự chạy tiếp
 		pcall(function()
@@ -6138,7 +6139,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 			queue_on_teleport(str)
 		end)
 
-		-- Nhảy server tốc độ cao (quét phòng >= 10 người)
 		task.spawn(function()
 			local placeId = game.PlaceId
 			local currentJobId = game.JobId
@@ -6153,24 +6153,39 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 						if res and res.Body then
 							local data = HttpService:JSONDecode(res.Body)
 							if data and data.data then
-								local qualifiedServers = {}
+								local availableServers = {}
 
 								for _, s in ipairs(data.data) do
-									if type(s) == "table" and s.id ~= currentJobId and s.playing and s.maxPlayers then
-										if s.playing >= 10 and s.playing < s.maxPlayers then
-											table.insert(qualifiedServers, s)
+									if type(s) == "table" and s.id ~= currentJobId and s.playing then
+										-- CHỈ CHỌN PHÒNG TỪ 10 ĐẾN 13 NGƯỜI (KHÔNG LẤY 14 VÌ SẼ BỊ FULL VÀ ĐEN MÀN HÌNH)
+										if s.playing >= 10 and s.playing <= 13 then
+											table.insert(availableServers, s)
 										end
 									end
 								end
 
-								if #qualifiedServers > 0 then
-									table.sort(qualifiedServers, function(a, b)
-										return a.playing > b.playing
+								if #availableServers > 0 then
+									local target = availableServers[math.random(1, #availableServers)]
+									print(string.format("[BeeZ Hub] Hopping to server with %d players...", target.playing))
+
+									-- 1. Dùng Remote chính chủ của TSB để tránh lỗi đen màn hình
+									pcall(function()
+										ReplicatedStorage.Ranked.CustomServerHandler:InvokeServer({
+											Action = "JoinServer",
+											JobId = target.id,
+											ServerCode = "",
+											JoinCode = "",
+											Password = nil,
+										})
 									end)
 
-									local target = qualifiedServers[math.random(1, math.min(#qualifiedServers, 3))]
-									TeleportService:TeleportToPlaceInstance(placeId, target.id, LocalPlayer)
-									task.wait(2)
+									-- 2. Dự phòng Teleport trực tiếp nếu remote không phản hồi
+									task.wait(1.5)
+									pcall(function()
+										TeleportService:TeleportToPlaceInstance(placeId, target.id, LocalPlayer)
+									end)
+
+									task.wait(3)
 									return
 								end
 
@@ -6183,7 +6198,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 						end
 					end)
 				end
-				task.wait(0.5)
+				task.wait(1)
 			end
 		end)
 	end
@@ -6191,6 +6206,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 	local function updateStreak(val)
 		if val > currentStreak then
 			currentStreak = val
+			print(string.format("[BeeZ Hub] Current Streak: %d", currentStreak))
 
 			if currentStreak >= TARGET_STREAK and not hopTriggered then
 				triggerServerHop()
