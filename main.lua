@@ -3298,7 +3298,7 @@ getgenv().SavedCarriedKills=%d
 getgenv().SavedEmotes=%d
 getgenv().SavedSessionStart=%d
 getgenv().renderEnabled=%s
-loadstring(game:HttpGet("https://vault.pandauth.com/vss/ce005477cfdeba10"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbeez/refs/heads/main/main.lua"))()
 ]], getgenv().TimeFarmed, n3, savedEmotes, savedSessionStart, tostring(getgenv().renderEnabled or false))
 
 		pcall(queue_on_teleport, str)
