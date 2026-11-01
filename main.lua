@@ -6108,13 +6108,18 @@ task.spawn(function()
 	end
 end)
 
---====================================================== BEEZ HUB STREAK WATCHER ==
+--====================================================== BEEZ HUB FIX STREAK WATCHER & AUTO HOP ==
 task.spawn(function()
 	local TextChatService = game:GetService("TextChatService")
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local Players = game:GetService("Players")
+	local LocalPlayer = Players.LocalPlayer
 	local TARGET_STREAK = 50
-	local lastStreak = 0
+
+	local currentStreak = 0
+	local lastAnnouncedStreak = 0
 	local hopTriggered = false
+	local spawnKills = nil
 
 	local function sendChatAnnouncement(message)
 		pcall(function()
@@ -6132,62 +6137,100 @@ task.spawn(function()
 		end)
 	end
 
-	local function watchStreak(leaderstatsFolder)
-		local streakObj = leaderstatsFolder:FindFirstChild("Streak")
-			or leaderstatsFolder:FindFirstChild("Killstreak")
-			or leaderstatsFolder:FindFirstChild("Kill Streak")
-			or leaderstatsFolder:FindFirstChild("Kills Streak")
+	local function triggerServerHop()
+		if hopTriggered then return end
+		hopTriggered = true
+		sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server...", TARGET_STREAK))
+		print("[BeeZ Hub] Auto Hop Triggered at " .. tostring(currentStreak) .. " streak!")
+		task.wait(1)
 
-		if not streakObj then
-			for _, child in ipairs(leaderstatsFolder:GetChildren()) do
-				if (child:IsA("IntValue") or child:IsA("NumberValue")) and child.Name:lower():find("streak") then
-					streakObj = child
-					break
-				end
+		if typeof(doHopServer) == "function" then
+			doHopServer()
+		elseif typeof(serverHop) == "function" then
+			serverHop()
+		end
+	end
+
+	local function updateStreak(val)
+		if val > currentStreak then
+			currentStreak = val
+			if currentStreak > lastAnnouncedStreak then
+				lastAnnouncedStreak = currentStreak
+				sendChatAnnouncement(string.format("[BeeZ Hub] Streak: %d Kills Streak!", currentStreak))
+				print(string.format("[BeeZ Hub] Streak Watcher: %d", currentStreak))
+			end
+
+			if currentStreak >= TARGET_STREAK and not hopTriggered then
+				triggerServerHop()
+			end
+		end
+	end
+
+	-- CÁCH 1: Tính Streak theo Total Kills (chính xác tuyệt đối trong The Strongest Battlegrounds)
+	task.spawn(function()
+		local leaderstats = LocalPlayer:WaitForChild("leaderstats", 15) or LocalPlayer
+		local totalKills = leaderstats:WaitForChild("Total Kills", 15)
+
+		local function onCharacter(char)
+			task.wait(0.5)
+			if totalKills then
+				spawnKills = totalKills.Value
+			end
+			currentStreak = 0
+			lastAnnouncedStreak = 0
+			hopTriggered = false
+
+			local hum = char:WaitForChild("Humanoid", 10)
+			if hum then
+				hum.Died:Connect(function()
+					currentStreak = 0
+					lastAnnouncedStreak = 0
+					if totalKills then
+						spawnKills = totalKills.Value
+					end
+				end)
 			end
 		end
 
-		if not streakObj then
-			return
+		if LocalPlayer.Character then
+			onCharacter(LocalPlayer.Character)
 		end
+		LocalPlayer.CharacterAdded:Connect(onCharacter)
 
-		lastStreak = streakObj.Value
+		if totalKills then
+			totalKills:GetPropertyChangedSignal("Value"):Connect(function()
+				if spawnKills then
+					local streakCalculated = totalKills.Value - spawnKills
+					if streakCalculated >= 0 then
+						updateStreak(streakCalculated)
+					end
+				else
+					spawnKills = totalKills.Value
+				end
+			end)
+		end
+	end)
 
-		streakObj:GetPropertyChangedSignal("Value"):Connect(function()
-			local current = streakObj.Value
-
-			if current > lastStreak then
-				lastStreak = current
-				sendChatAnnouncement(string.format("[BeeZ Hub] Streak: %d Kills Streak!", current))
-				print(string.format("[BeeZ Hub] Streak Watcher: %d", current))
-
-				if current >= TARGET_STREAK and not hopTriggered then
-					hopTriggered = true
-					sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server...", TARGET_STREAK))
-					print("[BeeZ Hub] Target streak reached! Hopping server...")
-					task.wait(1)
-
-					if typeof(doHopServer) == "function" then
-						doHopServer()
-					elseif typeof(serverHop) == "function" then
-						serverHop()
+	-- CÁCH 2: Quét trực tiếp Text số streak vương miện trên đầu nhân vật
+	task.spawn(function()
+		while true do
+			task.wait(0.5)
+			pcall(function()
+				local char = LocalPlayer.Character
+				if char then
+					for _, d in ipairs(char:GetDescendants()) do
+						if d:IsA("TextLabel") and tonumber(d.Text) then
+							local num = tonumber(d.Text)
+							if num and num >= 1 and num <= 500 then
+								local parentName = d.Parent and d.Parent.Name:lower() or ""
+								if parentName:find("streak") or parentName:find("kill") or parentName:find("overhead") or parentName:find("crown") or d.Name:lower():find("streak") then
+									updateStreak(num)
+								end
+							end
+						end
 					end
 				end
-			elseif current < lastStreak then
-				lastStreak = current
-				hopTriggered = false
-			end
-		end)
-	end
-
-	local leaderstats = localPlayer:FindFirstChild("leaderstats") or localPlayer:WaitForChild("leaderstats", 15)
-	if leaderstats then
-		watchStreak(leaderstats)
-	else
-		localPlayer.ChildAdded:Connect(function(child)
-			if child.Name == "leaderstats" then
-				watchStreak(child)
-			end
-		end)
-	end
+			end)
+		end
+	end)
 end)
