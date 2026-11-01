@@ -6141,10 +6141,10 @@ task.spawn(function()
 	local function triggerServerHop()
 		if hopTriggered then return end
 		hopTriggered = true
-		sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server...", TARGET_STREAK))
-		print("[BeeZ Hub] Target streak reached: " .. tostring(currentStreak) .. "! Hopping server...")
+		sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server đông người...", TARGET_STREAK))
+		print("[BeeZ Hub] Target streak reached: " .. tostring(currentStreak) .. "! Hopping to high player server...")
 
-		-- Lưu dữ liệu để nhảy server xong tự chạy lại
+		-- Lưu dữ liệu để teleport xong script tự chạy tiếp
 		pcall(function()
 			local str = string.format([[
 getgenv().TimeFarmed=%d
@@ -6159,7 +6159,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 
 		task.wait(1)
 
-		-- Nhảy server trực tiếp, không bị kẹt bộ lọc
+		-- Nhảy server ưu tiên phòng ĐÔNG NGƯỜI
 		task.spawn(function()
 			local placeId = game.PlaceId
 			local currentJobId = game.JobId
@@ -6168,19 +6168,30 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 			while true do
 				if req then
 					pcall(function()
-						local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100", placeId)
+						-- sortOrder=Desc để lấy các phòng đông người nhất trước
+						local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100", placeId)
 						local res = req({ Url = url, Method = "GET" })
 						if res and res.Body then
 							local data = HttpService:JSONDecode(res.Body)
 							if data and data.data then
-								local servers = {}
+								local crowdedServers = {}
+								local backupServers = {}
+
 								for _, s in ipairs(data.data) do
-									if type(s) == "table" and s.id ~= currentJobId and s.playing and s.maxPlayers and s.playing < s.maxPlayers then
-										table.insert(servers, s.id)
+									if type(s) == "table" and s.id ~= currentJobId and s.playing and s.maxPlayers then
+										-- Ưu tiên phòng từ 8 người trở lên và chưa bị full
+										if s.playing >= 8 and s.playing < s.maxPlayers then
+											table.insert(crowdedServers, s.id)
+										-- Dự phòng nếu không có phòng trên 8 thì lấy phòng từ 5 người trở lên
+										elseif s.playing >= 5 and s.playing < s.maxPlayers then
+											table.insert(backupServers, s.id)
+										end
 									end
 								end
-								if #servers > 0 then
-									local targetId = servers[math.random(1, #servers)]
+
+								local targetList = #crowdedServers > 0 and crowdedServers or backupServers
+								if #targetList > 0 then
+									local targetId = targetList[math.random(1, #targetList)]
 									TeleportService:TeleportToPlaceInstance(placeId, targetId, LocalPlayer)
 								end
 							end
