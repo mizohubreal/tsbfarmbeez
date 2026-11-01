@@ -6110,8 +6110,6 @@ end)
 
 --====================================================== BEEZ HUB FIX STREAK WATCHER & AUTO HOP ==
 task.spawn(function()
-	local TextChatService = game:GetService("TextChatService")
-	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local Players = game:GetService("Players")
 	local TeleportService = game:GetService("TeleportService")
 	local HttpService = game:GetService("HttpService")
@@ -6122,29 +6120,12 @@ task.spawn(function()
 	local hopTriggered = false
 	local spawnKills = nil
 
-	local function sendChatAnnouncement(message)
-		pcall(function()
-			if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-				local general = TextChatService:FindFirstChild("TextChannels") and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-				if general then
-					general:SendAsync(message)
-				end
-			else
-				local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-				if chatEvents and chatEvents:FindFirstChild("SayMessageRequest") then
-					chatEvents.SayMessageRequest:FireServer(message, "All")
-				end
-			end
-		end)
-	end
-
 	local function triggerServerHop()
 		if hopTriggered then return end
 		hopTriggered = true
-		sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server trên 10 người...", TARGET_STREAK))
-		print("[BeeZ Hub] Target streak reached: " .. tostring(currentStreak) .. "! Searching for 10+ players server...")
+		print("[BeeZ Hub] Reached 50 streak! Hopping immediately...")
 
-		-- Lưu thông số để sang server mới tự farm tiếp
+		-- Lưu dữ liệu để sang server mới tự chạy tiếp
 		pcall(function()
 			local str = string.format([[
 getgenv().TimeFarmed=%d
@@ -6157,9 +6138,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 			queue_on_teleport(str)
 		end)
 
-		task.wait(1)
-
-		-- Quét liên tục và CHỈ VÀO PHÒNG TRÊN 10 NGƯỜI
+		-- Nhảy server tốc độ cao (quét phòng >= 10 người)
 		task.spawn(function()
 			local placeId = game.PlaceId
 			local currentJobId = game.JobId
@@ -6178,27 +6157,23 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 
 								for _, s in ipairs(data.data) do
 									if type(s) == "table" and s.id ~= currentJobId and s.playing and s.maxPlayers then
-										-- CHỈ LẤY SERVER TỪ 10 NGƯỜI TRỞ LÊN VÀ CHƯA FULL
 										if s.playing >= 10 and s.playing < s.maxPlayers then
 											table.insert(qualifiedServers, s)
 										end
 									end
 								end
 
-								-- Sắp xếp lấy phòng có số người đông nhất trước (13, 12, 11, 10)
 								if #qualifiedServers > 0 then
 									table.sort(qualifiedServers, function(a, b)
 										return a.playing > b.playing
 									end)
 
 									local target = qualifiedServers[math.random(1, math.min(#qualifiedServers, 3))]
-									print(string.format("[BeeZ Hub] Found crowded server with %d players! Teleporting...", target.playing))
 									TeleportService:TeleportToPlaceInstance(placeId, target.id, LocalPlayer)
-									task.wait(4)
+									task.wait(2)
 									return
 								end
 
-								-- Nếu trang hiện tại không có phòng trên 10 người, lật sang trang kế tiếp
 								if data.nextPageCursor and data.nextPageCursor ~= "" then
 									cursor = data.nextPageCursor
 								else
@@ -6208,7 +6183,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 						end
 					end)
 				end
-				task.wait(2)
+				task.wait(0.5)
 			end
 		end)
 	end
@@ -6216,7 +6191,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 	local function updateStreak(val)
 		if val > currentStreak then
 			currentStreak = val
-			print(string.format("[BeeZ Hub] Current Streak: %d", currentStreak))
 
 			if currentStreak >= TARGET_STREAK and not hopTriggered then
 				triggerServerHop()
@@ -6270,7 +6244,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 	-- CÁCH 2: Quét UI Streak số màu vàng / vương miện trên đầu nhân vật
 	task.spawn(function()
 		while true do
-			task.wait(0.5)
+			task.wait(0.3)
 			pcall(function()
 				local char = LocalPlayer.Character
 				if char then
