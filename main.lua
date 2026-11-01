@@ -6141,10 +6141,10 @@ task.spawn(function()
 	local function triggerServerHop()
 		if hopTriggered then return end
 		hopTriggered = true
-		sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server đông người...", TARGET_STREAK))
-		print("[BeeZ Hub] Target streak reached: " .. tostring(currentStreak) .. "! Hopping to high player server...")
+		sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server trên 10 người...", TARGET_STREAK))
+		print("[BeeZ Hub] Target streak reached: " .. tostring(currentStreak) .. "! Searching for 10+ players server...")
 
-		-- Lưu dữ liệu để teleport xong script tự chạy tiếp
+		-- Lưu thông số để sang server mới tự farm tiếp
 		pcall(function()
 			local str = string.format([[
 getgenv().TimeFarmed=%d
@@ -6159,50 +6159,55 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbe
 
 		task.wait(1)
 
-		-- Nhảy server ưu tiên phòng ĐÔNG NGƯỜI
+		-- Quét liên tục và CHỈ VÀO PHÒNG TRÊN 10 NGƯỜI
 		task.spawn(function()
 			local placeId = game.PlaceId
 			local currentJobId = game.JobId
 			local req = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+			local cursor = ""
 
 			while true do
 				if req then
 					pcall(function()
-						-- sortOrder=Desc để lấy các phòng đông người nhất trước
-						local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100", placeId)
+						local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?limit=100%s", placeId, cursor ~= "" and ("&cursor=" .. cursor) or "")
 						local res = req({ Url = url, Method = "GET" })
 						if res and res.Body then
 							local data = HttpService:JSONDecode(res.Body)
 							if data and data.data then
-								local crowdedServers = {}
-								local backupServers = {}
+								local qualifiedServers = {}
 
 								for _, s in ipairs(data.data) do
 									if type(s) == "table" and s.id ~= currentJobId and s.playing and s.maxPlayers then
-										-- Ưu tiên phòng từ 8 người trở lên và chưa bị full
-										if s.playing >= 8 and s.playing < s.maxPlayers then
-											table.insert(crowdedServers, s.id)
-										-- Dự phòng nếu không có phòng trên 8 thì lấy phòng từ 5 người trở lên
-										elseif s.playing >= 5 and s.playing < s.maxPlayers then
-											table.insert(backupServers, s.id)
+										-- CHỈ LẤY SERVER TỪ 10 NGƯỜI TRỞ LÊN VÀ CHƯA FULL
+										if s.playing >= 10 and s.playing < s.maxPlayers then
+											table.insert(qualifiedServers, s)
 										end
 									end
 								end
 
-								local targetList = #crowdedServers > 0 and crowdedServers or backupServers
-								if #targetList > 0 then
-									local targetId = targetList[math.random(1, #targetList)]
-									TeleportService:TeleportToPlaceInstance(placeId, targetId, LocalPlayer)
+								-- Sắp xếp lấy phòng có số người đông nhất trước (13, 12, 11, 10)
+								if #qualifiedServers > 0 then
+									table.sort(qualifiedServers, function(a, b)
+										return a.playing > b.playing
+									end)
+
+									local target = qualifiedServers[math.random(1, math.min(#qualifiedServers, 3))]
+									print(string.format("[BeeZ Hub] Found crowded server with %d players! Teleporting...", target.playing))
+									TeleportService:TeleportToPlaceInstance(placeId, target.id, LocalPlayer)
+									task.wait(4)
+									return
+								end
+
+								-- Nếu trang hiện tại không có phòng trên 10 người, lật sang trang kế tiếp
+								if data.nextPageCursor and data.nextPageCursor ~= "" then
+									cursor = data.nextPageCursor
+								else
+									cursor = ""
 								end
 							end
 						end
 					end)
 				end
-
-				pcall(function()
-					TeleportService:Teleport(placeId, LocalPlayer)
-				end)
-
 				task.wait(2)
 			end
 		end)
