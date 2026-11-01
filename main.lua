@@ -6113,6 +6113,8 @@ task.spawn(function()
 	local TextChatService = game:GetService("TextChatService")
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local Players = game:GetService("Players")
+	local TeleportService = game:GetService("TeleportService")
+	local HttpService = game:GetService("HttpService")
 	local LocalPlayer = Players.LocalPlayer
 	local TARGET_STREAK = 50
 
@@ -6141,13 +6143,58 @@ task.spawn(function()
 		hopTriggered = true
 		sendChatAnnouncement(string.format("[BeeZ Hub] Đạt mốc %d streak! Bắt đầu auto hop server...", TARGET_STREAK))
 		print("[BeeZ Hub] Target streak reached: " .. tostring(currentStreak) .. "! Hopping server...")
+
+		-- Lưu dữ liệu để nhảy server xong tự chạy lại
+		pcall(function()
+			local str = string.format([[
+getgenv().TimeFarmed=%d
+getgenv().SavedCarriedKills=%d
+getgenv().SavedEmotes=%d
+getgenv().SavedSessionStart=%d
+getgenv().renderEnabled=%s
+loadstring(game:HttpGet("https://raw.githubusercontent.com/mizohubreal/tsbfarmbeez/refs/heads/main/main.lua"))()
+]], getgenv().TimeFarmed or 0, n3 or 0, savedEmotes or 0, savedSessionStart or os.time(), tostring(getgenv().renderEnabled or false))
+			queue_on_teleport(str)
+		end)
+
 		task.wait(1)
 
-		if typeof(doHopServer) == "function" then
-			doHopServer()
-		elseif typeof(serverHop) == "function" then
-			serverHop()
-		end
+		-- Nhảy server trực tiếp, không bị kẹt bộ lọc
+		task.spawn(function()
+			local placeId = game.PlaceId
+			local currentJobId = game.JobId
+			local req = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+
+			while true do
+				if req then
+					pcall(function()
+						local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100", placeId)
+						local res = req({ Url = url, Method = "GET" })
+						if res and res.Body then
+							local data = HttpService:JSONDecode(res.Body)
+							if data and data.data then
+								local servers = {}
+								for _, s in ipairs(data.data) do
+									if type(s) == "table" and s.id ~= currentJobId and s.playing and s.maxPlayers and s.playing < s.maxPlayers then
+										table.insert(servers, s.id)
+									end
+								end
+								if #servers > 0 then
+									local targetId = servers[math.random(1, #servers)]
+									TeleportService:TeleportToPlaceInstance(placeId, targetId, LocalPlayer)
+								end
+							end
+						end
+					end)
+				end
+
+				pcall(function()
+					TeleportService:Teleport(placeId, LocalPlayer)
+				end)
+
+				task.wait(2)
+			end
+		end)
 	end
 
 	local function updateStreak(val)
